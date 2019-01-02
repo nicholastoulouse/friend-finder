@@ -5,7 +5,7 @@
 // But you could have it be an empty array as well.
 // ===============================================================================
 
-module.exports.friendpool = [
+module.exports = [
     {
       "name":"Ahmed",
       "photo":"https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/6/005/064/1bd/3435aa3.jpg",
@@ -167,5 +167,3 @@ module.exports.friendpool = [
         ]
     }
   ];
-  
-module.exports.push2arr = function(newuser){ module.exports.friendpool.push(newuser); };
