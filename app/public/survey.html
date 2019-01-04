@@ -140,29 +140,29 @@
                     </label>
                 </li>
             </ol>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg" id="submit">Submit</button>
+            <button type="button" class="btn btn-primary btn-info btn-lg" data-toggle="modal" data-target="#myModal" id="submit">Submit</button>
         <!-- <button type="submit" class="btn btn-primary btn-lg btn-block" id="submit"><i class="fa fa-check-circle" aria-hidden="true"></i>Submit</button> -->
         </form>
-            
-        <!-- Modal -->
-        <div id="results-modal" class="modal fade" role="dialog">
-        <div class="modal-dialog">
     
-            <!-- Modal content-->
-            <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h2 class="modal-title"><strong>Best Match</strong></h2>
+        <!-- Modal content-->
+        <div id="myModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+            
+                <!-- Modal content-->
+                <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Modal Header</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Some text in the modal.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+                </div>
+
             </div>
-            <div class="modal-body">
-                <h2 id="match-name"></h2>
-                <img id="match-img" src="http://lorempixel.com/400/300" alt="">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
-            </div>
-        </div>
         </div>
 
     </div>
@@ -178,7 +178,11 @@
                     formData.map(function(num){ return parseFloat(num)});
                     $.post("/api/friends", formData) // https://localhost:3000 (a relative path is more dynamic)
                     .then(data =>{
-                        console.log("yourdata ", data);
+                        console.log(data);
+                        $('.modal-body > p').text("Introduce yourself to your new friend suggestion named " + data.name);
+                        var img = "<img src='" + data.photo + "' />"
+                        $('.modal-body').append(img);
+                        $( "form:first" ).submit();
                     });
                 })
                 // use postman or do it in front-end
