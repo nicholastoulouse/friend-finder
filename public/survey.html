@@ -10,11 +10,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-    <style>
-        .container {
-            font-size: 1.5em;
-        }
-    </style>
+    <link rel="stylesheet" href="./assets/css/styles.css" />
     <title>Friends Survey</title>
 </head>
 <body>
@@ -31,8 +27,7 @@
         
             <h4>Link to Photo Image</h4>
             <input type="text" id="photo" name="photo" class="form-control">
-        
-            <hr>
+            <hr />
             <ol>
                 <li>
                     <label for="0">What kind of book might you take with you on a trip if you had room to pack just one?</label>
@@ -45,7 +40,7 @@
                     </fieldset>
                 </li>
                 <li>
-                    <label for="1">What is your favorite landscape?</label>
+                    <label for="1">What might be your favorite natural dwelling landscape?</label>
                     <fieldset>
                         <input type="radio" name="1" value="1"> Coastal<br />
                         <input type="radio" name="1" value="2"> Mountains<br />
@@ -56,7 +51,7 @@
                     </label>
                 </li>
                 <li>
-                    <label for="2">Name a favorite hobby?</label>
+                    <label for="2">Name your most fun hobby?</label>
                     <fieldset>
                         <input type="radio" name="2" value="1"> Arts & Crafts<br />
                         <input type="radio" name="2" value="2"> Hikes<br />
@@ -66,13 +61,13 @@
                     </fieldset>
                 </li>
                 <li>
-                    <label for="3">What is your favorite kind of food?</label>
+                    <label for="3">What is your favorite 'special occassion' kind of food?</label>
                     <fieldset>
-                        <input type="radio" name="3" value="1"> European<br />
-                        <input type="radio" name="3" value="2"> Asian<br />
+                        <input type="radio" name="3" value="1"> French<br />
+                        <input type="radio" name="3" value="2"> Sushi<br />
                         <input type="radio" name="3" value="3"> Vegetarian<br />
-                        <input type="radio" name="3" value="4"> Fish<br />
-                        <input type="radio" name="3" value="5"> Meat<br /><br />
+                        <input type="radio" name="3" value="4"> Trendy Continental Food<br />
+                        <input type="radio" name="3" value="5"> Tapas<br /><br />
                     </fieldset>
                     </label>
                 </li>
@@ -152,10 +147,10 @@
                 <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Modal Header</h4>
+                    <h4 class="modal-title">Friend Suggestion:</h4>
                 </div>
                 <div class="modal-body">
-                    <p>Some text in the modal.</p>
+                    <p>Some text in the modal here</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -170,33 +165,33 @@
         // function processMatches(){
         // console.log("Button working, yay!");
             $(document).ready(function(){
+                var formData = {};
                 $('#submit').on("click", function (e){
                     e.preventDefault();
+     
                     var answers = $("fieldset input:radio:checked");
-                    var formData = [];
-                    for(var i=0; i < 10; i++){ formData.push(answers[i]); }
-                    formData.map(function(num){ return parseFloat(num)});
+                    for(var i =0; i < answers.length; i++)
+                        formData[i] = Number(answers[i]['value']);
+                    formData['name'] = $("input[type=text]#name").val().trim();
+                    formData['picURL'] = $("input[type=text]#photo").val().trim();
+
+                    // AJAX
                     $.post("/api/friends", formData) // https://localhost:3000 (a relative path is more dynamic)
                     .then(data =>{
-                        console.log(data);
+                        $('.modal-body > p::after').empty();
                         $('.modal-body > p').text("Introduce yourself to your new friend suggestion named " + data.name);
-                        var img = "<img src='" + data.photo + "' />"
+                        var img = $("<img src='" + data.picURL + "' />").addClass("friendSuggestion");
                         $('.modal-body').append(img);
                         $( "form:first" ).submit();
+                    })
+                    .catch(e => {
+                        console.log("error ", e);
                     });
                 })
-                // use postman or do it in front-end
-                // $('#submit').on("click", () => {
-                //     $.ajax("https://localhost:3000/friends", formData)
-                //     .then(data =>{
-                //         console.log(data);
-                //     });
-                // })  
             });
-        //}
         // In the route: res.send(req.body);  
 
-        /*
+        /*  Clever way of capturing answers and reformattingdata for the post
             $(document).ready(function(){
                 $('#submit').on("click", function (e){
                     e.preventDefault();

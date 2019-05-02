@@ -4,7 +4,6 @@
 // Initially we just set it equal to a "dummy" customer.
 // But you could have it be an empty array as well.
 // ===============================================================================
-
 module.exports = [
     {
       "name":"Ahmed",

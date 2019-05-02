@@ -1,0 +1,120 @@
+// Do either req.params OR req.body
+// multer for file upload functionality
+var express = require('express');
+var bodyParser = require('body-parser');
+var mysql = require('mysql');
+var path = require('path');
+
+var friendpool = require("../data/friends.js");
+
+module.exports = function(app) {
+    // body parser equivalent
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
+
+    var connection = mysql.createConnection({
+        host: "127.0.0.1",
+        port: 3306,
+        user: "root",
+        password: "sideHustle$1975",
+        database: "friend_finder",
+        multipleStatements: true
+    });
+    connection.connect();
+
+    // app.get('/', function(req, res) { 
+    //     res.sendFile(path.join(__dirname, '../public/home.html'));
+    // });
+
+    // PART I: INITIAL FRIEND DATA FROM JSON FILE; Display all friends from the friends table in json
+    // app.get('/api/friends', function(req, res) {
+    //     if (!req.body) return res.sendStatus(400);
+    //         console.log("in");
+    //     //res.json(path.join(__dirname, '../data/friends.js'));
+    //     res.json(friendpool);
+    // });
+
+    // PART II: FRIEND DATA FROM DATABASE; Display all friends from the friends table in json
+    app.get('/api/friends', function(req, res){
+        var friendPoolCount = 0;
+        connection.query('SELECT COUNT(id) from students', (error, numStudents, fields) => {
+            friendPoolCount = numStudents[0]['COUNT(id)'];
+        });
+        connection.query('SELECT id, name FROM students', (error, allpossiblefriends, fields) => {
+            if (!req.body) return res.sendStatus(400);
+            (error)? res.send(error) : res.json({...allpossiblefriends, people: friendPoolCount});
+        });
+    });
+
+    // This will be used to handle incoming survey results. This route will also be used to handle the compatibility logic.
+    // curl -X POST http://localhost:3000/api/friends
+    app.post('/api/friends', function(req, res) {
+
+        // Take the students data, write it to the database, then perform the match algorithm for most compatible friend(s)
+        if (!req.body) return res.sendStatus(400);
+        
+        (function (){
+            // DATA: {0: 4, 1: 4, 2: 2, 3: 3, 4: 4, 5: 4, 6: 3, 7: 2, 8: 3, 9: 5, name: "John Smith", picURL: ".jsmith.jpg"}
+            var pic = (req.body.picURL)? req.body.picURL : "http://lorempixel.com/249/325/people/";
+            var friendSeeker = {
+                "name": req.body.name,
+                "picURL": pic,
+                "choices": [
+                    Number(req.body['0']), 
+                    Number(req.body['1']), 
+                    Number(req.body['2']), 
+                    Number(req.body['3']), 
+                    Number(req.body['4']), 
+                    Number(req.body['5']), 
+                    Number(req.body['6']), 
+                    Number(req.body['7']), 
+                    Number(req.body['8']), 
+                    Number(req.body['9'])]
+            };
+            var answrArr = friendSeeker.choices;
+            console.log("friend seeker: ", JSON.stringify(friendSeeker));
+            // WRITE SCORES TO PERSISTANCE
+            connection.query('INSERT INTO students (name, picture_link) VALUES(?, ?); INSERT INTO scores (student_id, question_id, answerchoice) VALUES (LAST_INSERT_ID(),1,?), (LAST_INSERT_ID(),2,?), (LAST_INSERT_ID(),3,?), (LAST_INSERT_ID(),4,?), (LAST_INSERT_ID(),5,?), (LAST_INSERT_ID(),6,?), (LAST_INSERT_ID(),7,?), (LAST_INSERT_ID(),8,?), (LAST_INSERT_ID(),9,?), (LAST_INSERT_ID(),10,?)', [friendSeeker.name, friendSeeker.picURL, ...friendSeeker.choices], (error, seeker_insert_id) => {
+                if (error) console.log(error); // LAST_INSERT_ID()
+                else {
+                    var friendSeekerId = seeker_insert_id[0].insertId;
+                    console.log('====================+++++++friendSeekerId ', friendSeekerId);
+                    findMostCompatible(friendSeekerId);
+                }
+            });
+        })();
+
+    //     function sub(personArr, surveyArr) {
+    //         var sumsofdifferences = 0;
+    //         for (var i = 0; i < personArr.length; i++){
+    //             sumsofdifferences += Math.abs(personArr[i] - surveyArr[i]);
+    //         }
+    //         return sumsofdifferences;
+    //     }
+
+        function findMostCompatible(friendSeekerId){
+            // var differences = [];
+            // friendpool.forEach(person => {
+            //     console.log("scores ", person.scores);
+            //     let diff = sub(person.scores, answrArr);
+            //     differences.push(diff);
+            // });
+            // var smallest = differences[0];
+            // var idx = 0;
+            // for (var i = 1; i < differences.length; i++){
+            //     if (differences[i] < smallest){
+            //         smallest = differences[i];
+            //         idx = i;
+            //     }
+            // }
+            connection.query("SELECT (SELECT name FROM students WHERE students.id = b.student_id) AS 'friend', (SELECT picture_link FROM students WHERE students.id = b.student_id) AS 'picURL', SUM(ABS(a.answerchoice - b.answerchoice)) AS 'LEASTSCOREDIFFS' FROM scores a LEFT JOIN students s ON a.student_id = s.id LEFT JOIN scores b ON a.student_id <> b.student_id AND a.question_id = b.question_id WHERE a.student_id = ? GROUP BY friend LIMIT 1", [friendSeekerId], (error, match, fields) => {
+                if (error) console.log(error); 
+                else {
+                    console.log("The match is ", match[0].friend, "Picture URL: ",  match[0].picURL);
+                    res.json({name: match[0].friend, picURL: match[0].picURL});
+                }
+            });
+        }
+    // });
+})
+}

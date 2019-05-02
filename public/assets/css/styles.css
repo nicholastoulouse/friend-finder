@@ -1,0 +1,16 @@
+.friendSuggestion{
+    min-width:300px;
+    max-width: 420px;
+    width: 100%;
+    height: auto;
+    border: 2px solid black;
+}
+
+.modal-header {
+    text-align: left;
+    padding-right: 240px;
+}
+
+.container {
+    font-size: 1.5em;
+}
