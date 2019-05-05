@@ -33,9 +33,10 @@ CREATE TABLE IF NOT EXISTS scores (
     id INT NOT NULL AUTO_INCREMENT,
     student_id INT NOT NULL,
     question_id INT NOT NULL,
-    answerchoice INT NOT NULL,
+    answerchoice_id INT NOT NULL,
     FOREIGN KEY (student_id) REFERENCES students(id),
     FOREIGN KEY (question_id) REFERENCES questions(id),
+    FOREIGN KEY (answerchoice_id) REFERENCES answers(id),
     PRIMARY KEY(id)
 );
 

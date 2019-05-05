@@ -55,7 +55,8 @@ module.exports = function(app) {
         
         (function (){
             // DATA: {0: 4, 1: 4, 2: 2, 3: 3, 4: 4, 5: 4, 6: 3, 7: 2, 8: 3, 9: 5, name: "John Smith", picURL: ".jsmith.jpg"}
-            var pic = (req.body.picURL)? req.body.picURL : "http://lorempixel.com/249/325/people/";
+            var avatar = "http://lorempixel.com/249/325/people/"
+            var pic = (req.body.picURL)? req.body.picURL : avatar;
             var friendSeeker = {
                 "name": req.body.name,
                 "picURL": pic,
@@ -73,48 +74,33 @@ module.exports = function(app) {
             };
             var answrArr = friendSeeker.choices;
             console.log("friend seeker: ", JSON.stringify(friendSeeker));
+            console.log("mySQL array for query ", [friendSeeker.name, friendSeeker.picURL, ...friendSeeker.choices]);
             // WRITE SCORES TO PERSISTANCE
-            connection.query('INSERT INTO students (name, picture_link) VALUES(?, ?); INSERT INTO scores (student_id, question_id, answerchoice) VALUES (LAST_INSERT_ID(),1,?), (LAST_INSERT_ID(),2,?), (LAST_INSERT_ID(),3,?), (LAST_INSERT_ID(),4,?), (LAST_INSERT_ID(),5,?), (LAST_INSERT_ID(),6,?), (LAST_INSERT_ID(),7,?), (LAST_INSERT_ID(),8,?), (LAST_INSERT_ID(),9,?), (LAST_INSERT_ID(),10,?)', [friendSeeker.name, friendSeeker.picURL, ...friendSeeker.choices], (error, seeker_insert_id) => {
+            connection.query('INSERT INTO students (name, picture_link) VALUES(?, ?); INSERT INTO scores (student_id, question_id, answerchoice_id) VALUES (LAST_INSERT_ID(),1,?), (LAST_INSERT_ID(),2,?), (LAST_INSERT_ID(),3,?), (LAST_INSERT_ID(),4,?), (LAST_INSERT_ID(),5,?), (LAST_INSERT_ID(),6,?), (LAST_INSERT_ID(),7,?), (LAST_INSERT_ID(),8,?), (LAST_INSERT_ID(),9,?), (LAST_INSERT_ID(),10,?)', [friendSeeker.name, friendSeeker.picURL, ...friendSeeker.choices], (error, seeker_insert_id) => {
                 if (error) console.log(error); // LAST_INSERT_ID()
                 else {
                     var friendSeekerId = seeker_insert_id[0].insertId;
-                    console.log('====================+++++++friendSeekerId ', friendSeekerId);
+                    console.log('friendSeekerId ', friendSeekerId);
                     findMostCompatible(friendSeekerId);
                 }
             });
         })();
 
-    //     function sub(personArr, surveyArr) {
-    //         var sumsofdifferences = 0;
-    //         for (var i = 0; i < personArr.length; i++){
-    //             sumsofdifferences += Math.abs(personArr[i] - surveyArr[i]);
-    //         }
-    //         return sumsofdifferences;
-    //     }
-
         function findMostCompatible(friendSeekerId){
-            // var differences = [];
-            // friendpool.forEach(person => {
-            //     console.log("scores ", person.scores);
-            //     let diff = sub(person.scores, answrArr);
-            //     differences.push(diff);
-            // });
-            // var smallest = differences[0];
-            // var idx = 0;
-            // for (var i = 1; i < differences.length; i++){
-            //     if (differences[i] < smallest){
-            //         smallest = differences[i];
-            //         idx = i;
-            //     }
-            // }
-            connection.query("SELECT (SELECT name FROM students WHERE students.id = b.student_id) AS 'friend', (SELECT picture_link FROM students WHERE students.id = b.student_id) AS 'picURL', SUM(ABS(a.answerchoice - b.answerchoice)) AS 'LEASTSCOREDIFFS' FROM scores a LEFT JOIN students s ON a.student_id = s.id LEFT JOIN scores b ON a.student_id <> b.student_id AND a.question_id = b.question_id WHERE a.student_id = ? GROUP BY friend LIMIT 1", [friendSeekerId], (error, match, fields) => {
+
+            connection.query("SELECT * FROM (SELECT SUM(score_diff) AS score_diff_sum, me, them FROM (SELECT my_scores.student_id AS me, their_scores.student_id AS them, ABS(my_scores.answerchoice_id - their_scores.answerchoice_id) AS score_diff FROM scores AS my_scores LEFT JOIN (select answerchoice_id, student_id, question_id from scores) their_scores ON their_scores.question_id = my_scores.question_id WHERE ? != their_scores.student_id AND my_scores.student_id = ?) intermediary GROUP BY them) stuff ORDER BY score_diff_sum ASC LIMIT 1;", [friendSeekerId,friendSeekerId], (error, [match], fields) => {
                 if (error) console.log(error); 
                 else {
-                    console.log("The match is ", match[0].friend, "Picture URL: ",  match[0].picURL);
-                    res.json({name: match[0].friend, picURL: match[0].picURL});
+                    console.log("match results: ", match.them);
+                    connection.query("SELECT * FROM students where id=?;", [match.them], (err, [person], fields) => {
+                        if (err) console.log(error); 
+                        else {
+                            res.json({name: person.name, picURL: person.picture_link});
+                        }
+                    });
                 }
             });
+           setTimeout(function(){ connection.end()}, 10);
         }
-    // });
 })
 }
